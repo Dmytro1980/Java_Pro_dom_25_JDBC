@@ -9,10 +9,10 @@ import java.util.List;
 public class LessonDao {
 
     // метод додавання уроку
-    public static void writeDataToLesson(String lessonName, Integer homeworkId) {
+    public static void writeDataToLesson(String lessonName, Integer homeworkId) throws SQLException {
         if (checkIdInTable("Lesson", "homework_id", homeworkId)) {
             String sql = "INSERT INTO public.\"Lesson\"(name, homework_id) VALUES (?, ?);";
-            PreparedStatement preparedStatement;
+            PreparedStatement preparedStatement = null;
 
             try {
                 preparedStatement = DataBaseConnection.getConnection().prepareStatement(sql);
@@ -24,6 +24,8 @@ public class LessonDao {
 
             } catch (SQLException e) {
                 e.printStackTrace();
+            } finally {
+                DataBaseConnection.close(preparedStatement.getConnection());
             }
         } else {
             System.out.println("There is not homework with id = " + homeworkId);
@@ -31,12 +33,12 @@ public class LessonDao {
     }
 
     // метод видалення уроку
-    public static void deleteDataFromLesson(Integer lessonId) {
+    public static void deleteDataFromLesson(Integer lessonId) throws SQLException {
         if (checkIdInTable("Lesson", "id", lessonId)) {
             String sql = "DELETE FROM public.\"Lesson\" WHERE \"id\"=(?) ;";
-            PreparedStatement preparedStatement;
-
+            PreparedStatement preparedStatement = null;
             try {
+
                 preparedStatement = DataBaseConnection.getConnection().prepareStatement(sql);
                 preparedStatement.setInt(1, lessonId);
                 preparedStatement.execute();
@@ -44,9 +46,10 @@ public class LessonDao {
                     System.out.println("lesson with id = " + lessonId + " was deleted");
                 }
 
-                DataBaseConnection.close(preparedStatement.getConnection());
             } catch (SQLException e) {
                 e.printStackTrace();
+            } finally {
+                DataBaseConnection.close(preparedStatement.getConnection());
             }
         } else {
             System.out.println("no lesson with id = " + lessonId);
@@ -69,11 +72,11 @@ public class LessonDao {
     }
 
     // метод отримання уроку за ID - возвращает объект
-    public static Lesson getDataFromLessonById(Integer lessonId) {
+    public static Lesson getDataFromLessonById(Integer lessonId) throws SQLException {
         Lesson lesson = null;
         if (checkIdInTable("Lesson", "id", lessonId)) {
             String sql = "SELECT * FROM public.\"Lesson\" WHERE \"id\"=(?) ;";
-            PreparedStatement preparedStatement;
+            PreparedStatement preparedStatement = null;
             ResultSet resultSet;
 
             try {
@@ -88,11 +91,11 @@ public class LessonDao {
                     lesson.setName(resultSet.getString("name"));
                     lesson.setHomework_id(resultSet.getInt("homework_id"));
                 }
-
-                DataBaseConnection.close(preparedStatement.getConnection());
-
             } catch (SQLException e) {
                 e.printStackTrace();
+            }
+            finally {
+                DataBaseConnection.close(preparedStatement.getConnection());
             }
         } else {
             System.out.println("no lesson with id = " + lessonId);
@@ -101,22 +104,27 @@ public class LessonDao {
         return lesson;
     }
 
-
-
-
     private static ResultSet getDataFromDB(String tableName) throws SQLException {
         String sql = "SELECT * FROM \"" + tableName + "\";";
-        ResultSet resultSet = DataBaseConnection.getConnection().createStatement().executeQuery(sql);
-        DataBaseConnection.close(resultSet.getStatement().getConnection());
+
+        ResultSet resultSet = null;
+        try {
+            resultSet = DataBaseConnection.getConnection().createStatement().executeQuery(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        finally {
+            DataBaseConnection.close(resultSet.getStatement().getConnection());
+        }
         return resultSet;
     }
 
-    private static boolean checkIdInTable(String tableName, String fieldName, Integer id) {
+    private static boolean checkIdInTable(String tableName, String fieldName, Integer id) throws SQLException {
         String sql = "SELECT * FROM \"" + tableName + "\";";
-        ResultSet resultSet;
+        ResultSet resultSet = null;
         try {
             resultSet = DataBaseConnection.getConnection().createStatement().executeQuery(sql);
-            DataBaseConnection.close(resultSet.getStatement().getConnection());
+
             while (resultSet.next()) {
                 if (resultSet.getObject(fieldName) == id) {
                     return true;
@@ -125,8 +133,9 @@ public class LessonDao {
             return false;
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } finally {
+            DataBaseConnection.close(resultSet.getStatement().getConnection());
         }
-
     }
 
     public static <T> void printAllDataFromList(List<T> list) {

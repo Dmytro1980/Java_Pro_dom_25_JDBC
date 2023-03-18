@@ -13,20 +13,19 @@ public class DataBaseConnection {
 
     public static Connection getConnection() {            // - повертає нове з'єднання з БД
         Properties properties = new Properties();
-        String[] propArray = new String[3];
         try {
             InputStream in = Files.newInputStream(Paths.get("database.properties"));
             properties.load(in);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        propArray[0]=properties.getProperty("url");       // url
-        propArray[1]=properties.getProperty("username");  // username
-        propArray[2]=properties.getProperty("password"); // password
 
         Connection connection = null;
         try {
-            connection = DriverManager.getConnection(propArray[0], propArray[1], propArray[2]);
+            connection = DriverManager.getConnection(
+                    properties.getProperty("url"),
+                    properties.getProperty("username"),
+                    properties.getProperty("password"));
         } catch (SQLException e) {
             e.printStackTrace();
         }
